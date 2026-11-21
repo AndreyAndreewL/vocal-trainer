@@ -128,7 +128,11 @@
     }
 
     @media (min-width: 480px) {
-      .exercise-pick { grid-template-columns: 1fr 1fr 1fr; }
+      .exercise-pick { grid-template-columns: 1fr 1fr; }
+    }
+
+    @media (min-width: 640px) {
+      .exercise-pick { grid-template-columns: 1fr 1fr 1fr 1fr; }
     }
 
     .exercise-pick button {
@@ -321,6 +325,142 @@
       color: var(--accent);
       font-size: 1.4rem;
     }
+
+    .unison-settings {
+      margin-top: 12px;
+      padding-top: 12px;
+      border-top: 1px solid var(--line);
+      display: grid;
+      gap: 10px;
+    }
+
+    .field {
+      display: grid;
+      gap: 4px;
+    }
+
+    .field label {
+      font-size: 0.85rem;
+      color: var(--muted);
+    }
+
+    .field select,
+    .field input[type="range"] {
+      width: 100%;
+      font: inherit;
+      font-size: 1rem;
+      padding: 10px 12px;
+      border-radius: 10px;
+      border: 1px solid var(--line);
+      background: var(--bg-soft);
+      color: var(--text);
+      min-height: 44px;
+    }
+
+    .field input[type="range"] {
+      padding: 0;
+      min-height: 32px;
+      accent-color: var(--accent);
+    }
+
+    .field-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+
+    .vowel-box {
+      text-align: center;
+      padding: 14px 12px;
+      background: var(--bg-soft);
+      border-radius: 12px;
+      border: 1px solid var(--line);
+    }
+
+    .vowel-big {
+      font-size: clamp(1.6rem, 6vw, 2.2rem);
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      color: var(--accent);
+      line-height: 1.2;
+    }
+
+    .vowel-tip {
+      margin: 6px 0 0;
+      font-size: 0.88rem;
+      color: var(--muted);
+      line-height: 1.35;
+    }
+
+    .dir-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .dir-badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 110px;
+      padding: 10px 14px;
+      border-radius: 10px;
+      font-weight: 700;
+      font-size: 1.05rem;
+      background: var(--bg-soft);
+      color: var(--muted);
+    }
+
+    .dir-badge.high { color: var(--warn); background: rgba(212, 160, 90, 0.15); }
+    .dir-badge.low { color: #7eb0e0; background: rgba(126, 176, 224, 0.15); }
+    .dir-badge.ok { color: var(--ok); background: rgba(107, 196, 138, 0.18); }
+    .dir-badge.quiet { color: var(--muted); }
+
+    .trend-track {
+      position: relative;
+      height: 36px;
+      background: var(--bg-soft);
+      border-radius: 8px;
+      overflow: hidden;
+      flex: 1 1 160px;
+      min-width: 140px;
+    }
+
+    .trend-zero {
+      position: absolute;
+      left: 0;
+      right: 0;
+      top: 50%;
+      height: 1px;
+      background: rgba(107, 196, 138, 0.55);
+    }
+
+    .trend-zone {
+      position: absolute;
+      left: 0;
+      right: 0;
+      top: 50%;
+      height: 12px;
+      margin-top: -6px;
+      background: rgba(107, 196, 138, 0.12);
+    }
+
+    #trendCanvas {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+
+    .headphones-hint {
+      font-size: 0.88rem;
+      color: var(--warn);
+      line-height: 1.35;
+      margin: 0;
+    }
   </style>
 </head>
 <body>
@@ -370,7 +510,69 @@
         Интервалы
         <small>Услышите две ноты — спойте вторую</small>
       </button>
+      <button type="button" data-ex="unison">
+        Унисон
+        <small>Пойте вместе с зацикленным эталоном</small>
+      </button>
     </div>
+
+    <div class="unison-settings hidden" id="unisonSettings">
+      <p class="headphones-hint">Наденьте наушники (можно один) — иначе микрофон услышит эталон из динамиков.</p>
+      <div class="field-row">
+        <div class="field">
+          <label for="unisonPattern">Эталон</label>
+          <select id="unisonPattern">
+            <option value="drone">Дрон (одна нота)</option>
+            <option value="scale">Гамма до-мажор (петля)</option>
+            <option value="triad">Ступени 1–3–5</option>
+            <option value="siren">Сирена</option>
+          </select>
+        </div>
+        <div class="field" id="droneNoteField">
+          <label for="unisonNote">Нота дрона</label>
+          <select id="unisonNote">
+            <option value="60">До4</option>
+            <option value="62">Ре4</option>
+            <option value="64">Ми4</option>
+            <option value="65">Фа4</option>
+            <option value="67" selected>Соль4</option>
+            <option value="69">Ля4</option>
+          </select>
+        </div>
+      </div>
+      <div class="field-row">
+        <div class="field">
+          <label for="unisonTempo">Темп петли: <span id="unisonTempoVal">80</span> BPM</label>
+          <input type="range" id="unisonTempo" min="50" max="120" value="80" step="5" />
+        </div>
+        <div class="field">
+          <label for="unisonVol">Громкость эталона: <span id="unisonVolVal">35</span>%</label>
+          <input type="range" id="unisonVol" min="5" max="70" value="35" step="5" />
+        </div>
+      </div>
+      <div class="field">
+        <label for="unisonVowel">Что произносить</label>
+        <select id="unisonVowel">
+          <option value="aaa">а-а-а (открыто)</option>
+          <option value="ooo">о-о-о</option>
+          <option value="mimema">ми–мэ–ма</option>
+          <option value="nunona">ну–но–на</option>
+        </select>
+      </div>
+      <div class="vowel-box">
+        <div class="vowel-big" id="vowelBig">а-а-а</div>
+        <p class="vowel-tip" id="vowelTip">Пойте ровно, дышите свободно, не давите на связки.</p>
+      </div>
+      <div class="dir-row">
+        <div class="dir-badge quiet" id="dirBadge">тихо</div>
+        <div class="trend-track" title="Дорожка подстройки: отклонение к нулю">
+          <div class="trend-zone"></div>
+          <div class="trend-zero"></div>
+          <canvas id="trendCanvas" width="280" height="36" aria-label="Дорожка подстройки"></canvas>
+        </div>
+      </div>
+    </div>
+
     <div class="controls-grid" style="margin-top:12px">
       <button type="button" class="primary span2" id="btnStart" disabled>Начать упражнение</button>
       <button type="button" id="btnRef" disabled>Эталон</button>
@@ -414,7 +616,18 @@
   var NOTE_HOLD_MS = 1800;
   var INTERVAL_LISTEN_MS = 1600;
   var INTERVAL_SING_MS = 3500;
+  var UNISON_SECONDS = 20;
+  var VAD_RMS_GATE = 0.045; // голос громче типичной утечки эталона
+  var LOOP_ATTACK = 0.045;
+  var LOOP_RELEASE = 0.05;
   var STORAGE_KEY = "vocal-trainer-progress-v1";
+
+  var VOWELS = {
+    aaa: { text: "а-а-а", tip: "Открыто и ровно. Дышите свободно, не давите на связки." },
+    ooo: { text: "о-о-о", tip: "Круглые губы, звук мягкий. Не зажимайте горло." },
+    mimema: { text: "ми–мэ–ма", tip: "Меняйте гласную, высоту держите. Без рывков." },
+    nunona: { text: "ну–но–на", tip: "Лёгкий резонанс в маске. Пойте спокойно, без форсажа." },
+  };
 
   var audioCtx = null;
   var mediaStream = null;
@@ -429,11 +642,23 @@
   var metroGain = null;
   var metroTimer = 0;
 
+  // unison loop engine
+  var loopGain = null;
+  var loopNodes = []; // oscillators / gains to disconnect
+  var loopTimer = 0;
+  var loopNextTime = 0;
+  var loopActive = false;
+  var loopPattern = "drone";
+  var loopDroneMidi = 67;
+  var loopTempo = 80;
+  var loopVolume = 0.35;
+
   var currentEx = "hold";
   var sessionActive = false;
   var targetMidi = null;
   var pitchHistory = []; // {t, midi}
   var lastPitch = null;
+  var trendCents = []; // recent signed cents for adjustment track
 
   // exercise state
   var ex = {
@@ -457,6 +682,12 @@
     phaseStarted: 0,
     intervalOkMs: 0,
     intervalTotalMs: 0,
+    // unison
+    voiceMs: 0,
+    unisonInTuneMs: 0,
+    unisonCents: [],
+    unisonCentsEarly: [],
+    unisonCentsLate: [],
   };
 
   var el = {
@@ -478,9 +709,23 @@
     progressList: document.getElementById("progressList"),
     btnClearProgress: document.getElementById("btnClearProgress"),
     metronomeToggle: document.getElementById("metronomeToggle"),
+    unisonSettings: document.getElementById("unisonSettings"),
+    unisonPattern: document.getElementById("unisonPattern"),
+    unisonNote: document.getElementById("unisonNote"),
+    droneNoteField: document.getElementById("droneNoteField"),
+    unisonTempo: document.getElementById("unisonTempo"),
+    unisonTempoVal: document.getElementById("unisonTempoVal"),
+    unisonVol: document.getElementById("unisonVol"),
+    unisonVolVal: document.getElementById("unisonVolVal"),
+    unisonVowel: document.getElementById("unisonVowel"),
+    vowelBig: document.getElementById("vowelBig"),
+    vowelTip: document.getElementById("vowelTip"),
+    dirBadge: document.getElementById("dirBadge"),
+    trendCanvas: document.getElementById("trendCanvas"),
   };
 
   var ctx2d = el.viz.getContext("2d");
+  var trendCtx = el.trendCanvas.getContext("2d");
 
   function setStatus(node, text, cls) {
     node.textContent = text;
@@ -633,6 +878,248 @@
     refOsc.onended = function () {
       stopRefTone();
     };
+  }
+
+  function bufferRms(buf) {
+    var sum = 0;
+    for (var i = 0; i < buf.length; i++) sum += buf[i] * buf[i];
+    return Math.sqrt(sum / buf.length);
+  }
+
+  function trackLoopNode(node) {
+    loopNodes.push(node);
+    return node;
+  }
+
+  function stopUnisonLoop() {
+    loopActive = false;
+    if (loopTimer) {
+      clearInterval(loopTimer);
+      loopTimer = 0;
+    }
+    var now = audioCtx ? audioCtx.currentTime : 0;
+    if (loopGain) {
+      try {
+        loopGain.gain.cancelScheduledValues(now);
+        loopGain.gain.setValueAtTime(loopGain.gain.value, now);
+        loopGain.gain.exponentialRampToValueAtTime(0.0001, now + LOOP_RELEASE);
+      } catch (e) {}
+    }
+    loopNodes.forEach(function (n) {
+      try {
+        if (typeof n.stop === "function") n.stop(now + LOOP_RELEASE + 0.02);
+      } catch (e) {}
+      try {
+        n.disconnect();
+      } catch (e2) {}
+    });
+    loopNodes = [];
+    if (loopGain) {
+      var g = loopGain;
+      setTimeout(function () {
+        try {
+          g.disconnect();
+        } catch (e) {}
+      }, 120);
+      loopGain = null;
+    }
+  }
+
+  function ensureLoopGain() {
+    ensureAudio();
+    if (!loopGain) {
+      loopGain = audioCtx.createGain();
+      loopGain.gain.value = loopVolume;
+      loopGain.connect(audioCtx.destination);
+    } else {
+      loopGain.gain.setTargetAtTime(loopVolume, audioCtx.currentTime, 0.03);
+    }
+  }
+
+  /** Одна нота в петле с плавной огибающей (без щелчка). */
+  function scheduleLoopNote(midi, startTime, duration) {
+    var osc = trackLoopNode(audioCtx.createOscillator());
+    var g = trackLoopNode(audioCtx.createGain());
+    osc.type = "sine";
+    osc.frequency.value = PK.midiToFrequency(midi);
+    osc.connect(g);
+    g.connect(loopGain);
+    var peak = 0.22;
+    var attack = Math.min(LOOP_ATTACK, duration * 0.35);
+    var release = Math.min(LOOP_RELEASE, duration * 0.35);
+    var sustainEnd = Math.max(startTime + attack, startTime + duration - release);
+    g.gain.setValueAtTime(0.0001, startTime);
+    g.gain.exponentialRampToValueAtTime(peak, startTime + attack);
+    g.gain.setValueAtTime(peak, sustainEnd);
+    g.gain.exponentialRampToValueAtTime(0.0001, startTime + duration);
+    osc.start(startTime);
+    osc.stop(startTime + duration + 0.02);
+  }
+
+  function patternNotes(kind) {
+    if (kind === "scale") return PK.cMajorScaleMidis(60, true);
+    if (kind === "triad") return [60, 64, 67, 64, 60, 64, 67, 64]; // 1-3-5 петля
+    return [loopDroneMidi];
+  }
+
+  function schedulePatternCycle(startAt) {
+    var notes = patternNotes(loopPattern);
+    var beat = 60 / loopTempo;
+    var t = startAt;
+    for (var i = 0; i < notes.length; i++) {
+      scheduleLoopNote(notes[i], t, beat);
+      // лёгкое перекрытие release следующей ноты → стык без щелчка
+      t += beat;
+    }
+    return t;
+  }
+
+  function startSirenLoop() {
+    ensureLoopGain();
+    var osc = trackLoopNode(audioCtx.createOscillator());
+    var g = trackLoopNode(audioCtx.createGain());
+    osc.type = "sine";
+    osc.connect(g);
+    g.connect(loopGain);
+    var now = audioCtx.currentTime;
+    g.gain.setValueAtTime(0.0001, now);
+    g.gain.exponentialRampToValueAtTime(0.2, now + LOOP_ATTACK);
+    var lo = PK.midiToFrequency(60);
+    var hi = PK.midiToFrequency(67);
+    var half = (60 / loopTempo) * 4; // ~4 доли вверх / вниз
+    osc.frequency.setValueAtTime(lo, now);
+    var cursor = now;
+    function scheduleSweeps(from) {
+      var t = from;
+      for (var i = 0; i < 8; i++) {
+        osc.frequency.linearRampToValueAtTime(hi, t + half);
+        t += half;
+        osc.frequency.linearRampToValueAtTime(lo, t + half);
+        t += half;
+      }
+      return t;
+    }
+    loopNextTime = scheduleSweeps(cursor);
+    osc.start(now);
+    loopActive = true;
+    loopTimer = setInterval(function () {
+      if (!loopActive || !audioCtx) return;
+      var ahead = audioCtx.currentTime + 2.5;
+      if (loopNextTime < ahead) {
+        loopNextTime = scheduleSweeps(loopNextTime);
+      }
+    }, 400);
+  }
+
+  function startDroneLoop() {
+    ensureLoopGain();
+    var osc = trackLoopNode(audioCtx.createOscillator());
+    var g = trackLoopNode(audioCtx.createGain());
+    osc.type = "sine";
+    osc.frequency.value = PK.midiToFrequency(loopDroneMidi);
+    osc.connect(g);
+    g.connect(loopGain);
+    var now = audioCtx.currentTime;
+    g.gain.setValueAtTime(0.0001, now);
+    g.gain.exponentialRampToValueAtTime(0.22, now + LOOP_ATTACK);
+    osc.start(now);
+    loopActive = true;
+    targetMidi = loopDroneMidi;
+  }
+
+  function startPatternLoop() {
+    ensureLoopGain();
+    var now = audioCtx.currentTime + 0.05;
+    loopNextTime = schedulePatternCycle(now);
+    loopActive = true;
+    targetMidi = patternNotes(loopPattern)[0];
+    setTargetLabel(noteLabel(targetMidi) + " · петля");
+    loopTimer = setInterval(function () {
+      if (!loopActive || !audioCtx) return;
+      var ahead = audioCtx.currentTime + 1.8;
+      while (loopNextTime < ahead) {
+        loopNextTime = schedulePatternCycle(loopNextTime);
+      }
+      // текущая цель — нота цикла по времени
+      var notes = patternNotes(loopPattern);
+      var beat = 60 / loopTempo;
+      var cycleDur = notes.length * beat;
+      var elapsed = audioCtx.currentTime - now;
+      if (elapsed < 0) return;
+      var idx = Math.floor((elapsed % cycleDur) / beat) % notes.length;
+      var midi = notes[idx];
+      if (midi !== targetMidi) {
+        targetMidi = midi;
+        setTargetLabel(noteLabel(targetMidi) + " · петля");
+      }
+    }, 50);
+  }
+
+  function startUnisonLoop() {
+    stopRefTone();
+    stopUnisonLoop();
+    loopPattern = el.unisonPattern.value;
+    loopDroneMidi = parseInt(el.unisonNote.value, 10) || 67;
+    loopTempo = parseInt(el.unisonTempo.value, 10) || 80;
+    loopVolume = (parseInt(el.unisonVol.value, 10) || 35) / 100;
+    if (loopPattern === "drone") startDroneLoop();
+    else if (loopPattern === "siren") {
+      startSirenLoop();
+      targetMidi = 63.5; // середина сирены ~ между До и Соль
+    } else {
+      startPatternLoop();
+    }
+  }
+
+  function updateVowelHint() {
+    var v = VOWELS[el.unisonVowel.value] || VOWELS.aaa;
+    el.vowelBig.textContent = v.text;
+    el.vowelTip.textContent = v.tip;
+  }
+
+  function updateUnisonSettingsVisibility() {
+    var on = currentEx === "unison";
+    el.unisonSettings.classList.toggle("hidden", !on);
+    el.droneNoteField.style.opacity = el.unisonPattern.value === "drone" ? "1" : "0.45";
+    el.unisonNote.disabled = el.unisonPattern.value !== "drone";
+  }
+
+  function setDirBadge(mode, text) {
+    el.dirBadge.className = "dir-badge " + mode;
+    el.dirBadge.textContent = text;
+  }
+
+  function drawTrendTrack() {
+    var canvas = el.trendCanvas;
+    var parent = canvas.parentElement;
+    var dpr = window.devicePixelRatio || 1;
+    var w = Math.max(120, Math.floor(parent.clientWidth * dpr));
+    var h = Math.max(28, Math.floor(parent.clientHeight * dpr));
+    if (canvas.width !== w || canvas.height !== h) {
+      canvas.width = w;
+      canvas.height = h;
+    }
+    trendCtx.clearRect(0, 0, w, h);
+    if (trendCents.length < 2) return;
+    var maxAbs = 50;
+    trendCtx.strokeStyle = "#5eb8a8";
+    trendCtx.lineWidth = Math.max(1.5, w / 180);
+    trendCtx.beginPath();
+    for (var i = 0; i < trendCents.length; i++) {
+      var x = (i / (trendCents.length - 1)) * w;
+      var y = h / 2 - (trendCents[i] / maxAbs) * (h / 2 - 2);
+      y = Math.max(1, Math.min(h - 1, y));
+      if (i === 0) trendCtx.moveTo(x, y);
+      else trendCtx.lineTo(x, y);
+    }
+    trendCtx.stroke();
+  }
+
+  function meanAbs(arr) {
+    if (!arr.length) return NaN;
+    var s = 0;
+    for (var i = 0; i < arr.length; i++) s += Math.abs(arr[i]);
+    return s / arr.length;
   }
 
   function clickMetronome() {
@@ -798,6 +1285,20 @@
     setStatus(el.exStatus, "Готово: " + detail, "ok");
     recordScore(exName, scorePct, detail);
     stopRefTone();
+    stopUnisonLoop();
+  }
+
+  function currentSirenMidi() {
+    // приблизительная цель сирены по фазе темпа
+    if (!audioCtx || !ex.startedAt) return 63.5;
+    var half = (60 / loopTempo) * 4;
+    var elapsed = (performance.now() - ex.startedAt) / 1000;
+    var cycle = half * 2;
+    var pos = elapsed % cycle;
+    var lo = 60;
+    var hi = 67;
+    if (pos < half) return lo + ((hi - lo) * pos) / half;
+    return hi - ((hi - lo) * (pos - half)) / half;
   }
 
   function startHold() {
@@ -986,22 +1487,149 @@
     }
   }
 
+  function startUnison() {
+    ex.kind = "unison";
+    ex.startedAt = performance.now();
+    ex.lastTs = performance.now();
+    ex.totalMs = 0;
+    ex.voiceMs = 0;
+    ex.unisonInTuneMs = 0;
+    ex.unisonCents = [];
+    ex.unisonCentsEarly = [];
+    ex.unisonCentsLate = [];
+    trendCents = [];
+    updateVowelHint();
+    startUnisonLoop();
+    var label =
+      loopPattern === "drone"
+        ? noteLabel(loopDroneMidi) + " · дрон"
+        : loopPattern === "scale"
+          ? "гамма · петля"
+          : loopPattern === "triad"
+            ? "1–3–5 · петля"
+            : "сирена · петля";
+    setTargetLabel(label);
+    setStatus(el.exStatus, "Пойте в унисон с петлёй · " + UNISON_SECONDS + " с", "warn");
+    setDirBadge("quiet", "тихо");
+  }
+
+  function finalizeUnison() {
+    var inZone =
+      ex.voiceMs > 0 ? (ex.unisonInTuneMs / ex.voiceMs) * 100 : 0;
+    var avgDev = meanAbs(ex.unisonCents);
+    if (!isFinite(avgDev)) avgDev = 50;
+    var early = meanAbs(ex.unisonCentsEarly);
+    var late = meanAbs(ex.unisonCentsLate);
+    var trendTxt = "мало данных";
+    var trendBonus = 0;
+    if (isFinite(early) && isFinite(late) && ex.unisonCentsEarly.length > 8) {
+      if (late < early - 2) {
+        trendTxt = "подстройка ↓";
+        trendBonus = 10;
+      } else if (late > early + 2) {
+        trendTxt = "отклонение ↑";
+        trendBonus = -5;
+      } else {
+        trendTxt = "ровно";
+        trendBonus = 0;
+      }
+    }
+    // точность по зоне + штраф за среднее отклонение + тренд
+    var score = Math.max(0, Math.min(100, inZone * 0.75 + Math.max(0, 100 - avgDev * 2) * 0.25 + trendBonus));
+    finishSession(
+      score,
+      "в цели " +
+        Math.round(inZone) +
+        "% · ср. " +
+        Math.round(avgDev) +
+        "¢ · " +
+        trendTxt,
+      "Унисон"
+    );
+    targetMidi = null;
+    setDirBadge("quiet", "тихо");
+  }
+
+  function tickUnison(now, analysis, voiceActive) {
+    var dt = now - ex.lastTs;
+    ex.lastTs = now;
+    ex.totalMs += dt;
+
+    if (loopPattern === "siren") {
+      targetMidi = currentSirenMidi();
+      setTargetLabel("~" + noteLabel(Math.round(targetMidi)) + " · сирена");
+    }
+
+    var cents = centsToTarget(analysis, targetMidi);
+
+    if (!voiceActive || !isFinite(cents)) {
+      setDirBadge("quiet", "тихо");
+      // молчание / утечка эталона — НЕ засчитываем как попадание
+    } else {
+      ex.voiceMs += dt;
+      ex.unisonCents.push(cents);
+      var half = (UNISON_SECONDS * 1000) / 2;
+      if (ex.totalMs < half) ex.unisonCentsEarly.push(cents);
+      else ex.unisonCentsLate.push(cents);
+
+      trendCents.push(cents);
+      if (trendCents.length > 80) trendCents.shift();
+
+      if (Math.abs(cents) <= CENTS_OK) {
+        ex.unisonInTuneMs += dt;
+        setDirBadge("ok", "в цель");
+      } else if (cents > 0) {
+        setDirBadge("high", "выше ↑");
+      } else {
+        setDirBadge("low", "ниже ↓");
+      }
+    }
+
+    drawTrendTrack();
+
+    var left = Math.max(0, UNISON_SECONDS - ex.totalMs / 1000);
+    var zonePct =
+      ex.voiceMs > 0 ? Math.round((ex.unisonInTuneMs / ex.voiceMs) * 100) : 0;
+    var avg = meanAbs(ex.unisonCents);
+    setStatus(
+      el.exStatus,
+      "Ещё " +
+        left.toFixed(1) +
+        " с · в цели " +
+        zonePct +
+        "%" +
+        (isFinite(avg) ? " · ср. " + Math.round(avg) + "¢" : ""),
+      "warn"
+    );
+
+    if (ex.totalMs >= UNISON_SECONDS * 1000) {
+      finalizeUnison();
+    }
+  }
+
   function startExercise() {
     if (!micOn || sessionActive) return;
     ensureAudio();
     sessionActive = true;
     pitchHistory = [];
+    trendCents = [];
     el.btnStart.classList.add("hidden");
     el.btnStop.classList.remove("hidden");
     el.sessionScore.textContent = "…";
     el.sessionDetail.textContent = "Идёт упражнение";
     if (currentEx === "hold") startHold();
     else if (currentEx === "scale") startScale();
-    else startInterval();
+    else if (currentEx === "interval") startInterval();
+    else startUnison();
   }
 
   function stopExercise() {
     if (!sessionActive) return;
+    // унисон при ручном стопе — всё равно посчитать, если был голос
+    if (ex.kind === "unison" && ex.voiceMs > 500) {
+      finalizeUnison();
+      return;
+    }
     sessionActive = false;
     targetMidi = null;
     el.btnStart.classList.remove("hidden");
@@ -1010,21 +1638,33 @@
     setStatus(el.exStatus, "Упражнение остановлено", "warn");
     el.sessionDetail.textContent = "Прервано";
     stopRefTone();
+    stopUnisonLoop();
+    setDirBadge("quiet", "тихо");
   }
 
   function loop() {
     rafId = requestAnimationFrame(loop);
     if (!analyser) return;
     analyser.getFloatTimeDomainData(timeBuf);
-    var analysis = PK.analyzePitch(timeBuf, audioCtx.sampleRate, {
-      threshold: 0.15,
-      minHz: 70,
-      maxHz: 1000,
-      lang: "ru",
-    });
+    var rms = bufferRms(timeBuf);
+    // гейт: при унисоне требуем уровень выше утечки эталона (растёт с громкостью петли)
+    var vadGate =
+      sessionActive && ex.kind === "unison"
+        ? VAD_RMS_GATE + loopVolume * 0.03
+        : 0.01;
+    var voiceActive = rms >= vadGate;
 
-    // сглаживание для визуала: требуем минимальную вероятность
-    if (analysis && analysis.probability < 0.6) analysis = null;
+    var analysis = null;
+    if (voiceActive) {
+      analysis = PK.analyzePitch(timeBuf, audioCtx.sampleRate, {
+        threshold: 0.15,
+        minHz: 70,
+        maxHz: 1000,
+        lang: "ru",
+      });
+      // сглаживание для визуала: требуем минимальную вероятность
+      if (analysis && analysis.probability < 0.6) analysis = null;
+    }
 
     updateReadout(analysis);
     if (analysis) {
@@ -1036,6 +1676,7 @@
       if (ex.kind === "hold") tickHold(now, analysis);
       else if (ex.kind === "scale") tickScale(now, analysis);
       else if (ex.kind === "interval") tickInterval(now, analysis);
+      else if (ex.kind === "unison") tickUnison(now, analysis, voiceActive);
     }
 
     drawViz();
@@ -1064,10 +1705,29 @@
     Array.prototype.forEach.call(el.exercisePick.querySelectorAll("button"), function (b) {
       b.classList.toggle("selected", b === btn);
     });
+    updateUnisonSettingsVisibility();
+  });
+
+  el.unisonPattern.addEventListener("change", updateUnisonSettingsVisibility);
+  el.unisonTempo.addEventListener("input", function () {
+    el.unisonTempoVal.textContent = el.unisonTempo.value;
+    loopTempo = parseInt(el.unisonTempo.value, 10) || 80;
+  });
+  el.unisonVol.addEventListener("input", function () {
+    el.unisonVolVal.textContent = el.unisonVol.value;
+    loopVolume = (parseInt(el.unisonVol.value, 10) || 35) / 100;
+    if (loopGain && audioCtx) {
+      loopGain.gain.setTargetAtTime(loopVolume, audioCtx.currentTime, 0.04);
+    }
+  });
+  el.unisonVowel.addEventListener("change", updateVowelHint);
+  el.unisonNote.addEventListener("change", function () {
+    loopDroneMidi = parseInt(el.unisonNote.value, 10) || 67;
   });
 
   window.addEventListener("resize", function () {
     drawViz();
+    drawTrendTrack();
   });
 
   // Secure context hint
@@ -1083,8 +1743,13 @@
     el.btnMic.disabled = true;
   }
 
+  updateVowelHint();
+  updateUnisonSettingsVisibility();
+  el.unisonTempoVal.textContent = el.unisonTempo.value;
+  el.unisonVolVal.textContent = el.unisonVol.value;
   renderProgress();
   drawViz();
+  drawTrendTrack();
 })();
   </script>
 </body>
