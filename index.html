@@ -1,0 +1,1091 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#12141a" />
+  <title>Тренажёр вокала</title>
+  <style>
+    :root {
+      --bg: #12141a;
+      --bg-elev: #1a1d26;
+      --bg-soft: #222632;
+      --text: #e8eaef;
+      --muted: #9aa3b5;
+      --accent: #5eb8a8;
+      --accent-dim: #3d7a70;
+      --warn: #d4a05a;
+      --bad: #c45c5c;
+      --ok: #6bc48a;
+      --line: #2c3140;
+      --radius: 14px;
+      --pad: 16px;
+      --font: "Segoe UI", "Roboto", "Helvetica Neue", sans-serif;
+      --safe-b: env(safe-area-inset-bottom, 0px);
+    }
+
+    * { box-sizing: border-box; }
+    html, body {
+      margin: 0;
+      padding: 0;
+      min-height: 100%;
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--font);
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      padding: 12px 12px calc(12px + var(--safe-b));
+      max-width: 720px;
+      margin: 0 auto;
+    }
+
+    h1 {
+      font-size: clamp(1.35rem, 4.5vw, 1.75rem);
+      font-weight: 700;
+      margin: 4px 0 2px;
+      letter-spacing: -0.02em;
+    }
+
+    .sub {
+      color: var(--muted);
+      font-size: 0.92rem;
+      margin: 0 0 14px;
+      line-height: 1.35;
+    }
+
+    .panel {
+      background: var(--bg-elev);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      padding: var(--pad);
+      margin-bottom: 12px;
+    }
+
+    .row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .row.between { justify-content: space-between; }
+
+    button, .btn {
+      appearance: none;
+      border: none;
+      border-radius: 12px;
+      padding: 14px 18px;
+      font-size: 1.05rem;
+      font-weight: 600;
+      font-family: inherit;
+      cursor: pointer;
+      background: var(--bg-soft);
+      color: var(--text);
+      min-height: 48px;
+      touch-action: manipulation;
+    }
+
+    button:disabled {
+      opacity: 0.45;
+      cursor: not-allowed;
+    }
+
+    button.primary {
+      background: var(--accent);
+      color: #0c1210;
+      flex: 1 1 auto;
+      min-width: 140px;
+    }
+
+    button.primary:active { filter: brightness(0.95); }
+
+    button.ghost {
+      background: transparent;
+      border: 1px solid var(--line);
+      color: var(--muted);
+      padding: 10px 14px;
+      min-height: 42px;
+      font-size: 0.95rem;
+    }
+
+    button.ghost.active {
+      border-color: var(--accent);
+      color: var(--accent);
+      background: rgba(94, 184, 168, 0.12);
+    }
+
+    button.danger {
+      background: var(--bad);
+      color: #fff;
+    }
+
+    .exercise-pick {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 8px;
+    }
+
+    @media (min-width: 480px) {
+      .exercise-pick { grid-template-columns: 1fr 1fr 1fr; }
+    }
+
+    .exercise-pick button {
+      text-align: left;
+      padding: 14px;
+      line-height: 1.25;
+      border: 2px solid transparent;
+    }
+
+    .exercise-pick button small {
+      display: block;
+      font-weight: 400;
+      color: var(--muted);
+      font-size: 0.82rem;
+      margin-top: 4px;
+    }
+
+    .exercise-pick button.selected {
+      border-color: var(--accent);
+      background: rgba(94, 184, 168, 0.15);
+    }
+
+    .pitch-readout {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 8px 12px;
+      align-items: end;
+    }
+
+    .note-big {
+      font-size: clamp(2.4rem, 10vw, 3.4rem);
+      font-weight: 700;
+      line-height: 1;
+      letter-spacing: -0.03em;
+    }
+
+    .hz {
+      color: var(--muted);
+      font-size: 0.95rem;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .cents-bar {
+      grid-column: 1 / -1;
+      position: relative;
+      height: 28px;
+      background: var(--bg-soft);
+      border-radius: 8px;
+      overflow: hidden;
+      margin-top: 4px;
+    }
+
+    .cents-zone {
+      position: absolute;
+      left: 50%;
+      top: 0;
+      bottom: 0;
+      width: 25%;
+      transform: translateX(-50%);
+      background: rgba(107, 196, 138, 0.22);
+    }
+
+    .cents-center {
+      position: absolute;
+      left: 50%;
+      top: 0;
+      bottom: 0;
+      width: 2px;
+      background: var(--ok);
+      transform: translateX(-50%);
+    }
+
+    .cents-needle {
+      position: absolute;
+      top: 2px;
+      bottom: 2px;
+      width: 6px;
+      margin-left: -3px;
+      border-radius: 3px;
+      background: var(--accent);
+      left: 50%;
+      transition: left 0.06s linear, background 0.15s;
+    }
+
+    .cents-label {
+      font-size: 0.9rem;
+      color: var(--muted);
+      font-variant-numeric: tabular-nums;
+    }
+
+    .cents-label.in-tune { color: var(--ok); }
+
+    #viz {
+      width: 100%;
+      height: 180px;
+      display: block;
+      background: #0e1015;
+      border-radius: 10px;
+      touch-action: none;
+    }
+
+    @media (min-width: 600px) {
+      #viz { height: 220px; }
+    }
+
+    .status {
+      font-size: 0.95rem;
+      color: var(--muted);
+      min-height: 1.4em;
+    }
+
+    .status.ok { color: var(--ok); }
+    .status.warn { color: var(--warn); }
+    .status.err { color: var(--bad); }
+
+    .score-box {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px 20px;
+      align-items: baseline;
+    }
+
+    .score-box .val {
+      font-size: 1.8rem;
+      font-weight: 700;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .score-box .lbl {
+      color: var(--muted);
+      font-size: 0.85rem;
+    }
+
+    .progress-list {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+      font-size: 0.92rem;
+    }
+
+    .progress-list li {
+      display: flex;
+      justify-content: space-between;
+      padding: 8px 0;
+      border-bottom: 1px solid var(--line);
+      gap: 12px;
+    }
+
+    .progress-list li:last-child { border-bottom: none; }
+
+    .hint {
+      font-size: 0.88rem;
+      color: var(--muted);
+      line-height: 1.4;
+      margin: 8px 0 0;
+    }
+
+    .hidden { display: none !important; }
+
+    .controls-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+
+    .controls-grid .span2 { grid-column: 1 / -1; }
+
+    label.toggle {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 0.95rem;
+      color: var(--muted);
+      cursor: pointer;
+      user-select: none;
+    }
+
+    label.toggle input {
+      width: 20px;
+      height: 20px;
+      accent-color: var(--accent);
+    }
+
+    .target-note {
+      font-size: 1.15rem;
+      font-weight: 600;
+    }
+
+    .target-note span {
+      color: var(--accent);
+      font-size: 1.4rem;
+    }
+  </style>
+</head>
+<body>
+  <h1>Тренажёр вокала</h1>
+  <p class="sub">Слушает микрофон и показывает, попадаете ли вы в ноту. Порог «попал» — ±25 центов.</p>
+
+  <section class="panel" id="micPanel">
+    <div class="row between">
+      <button type="button" class="primary" id="btnMic">Включить микрофон</button>
+      <label class="toggle">
+        <input type="checkbox" id="metronomeToggle" />
+        Метроном
+      </label>
+    </div>
+    <p class="status" id="micStatus">Микрофон выключен</p>
+  </section>
+
+  <section class="panel">
+    <div class="pitch-readout">
+      <div>
+        <div class="note-big" id="noteName">—</div>
+        <div class="hz" id="noteHz">— Гц</div>
+      </div>
+      <div class="cents-label" id="centsLabel">—</div>
+      <div class="cents-bar" aria-hidden="true">
+        <div class="cents-zone"></div>
+        <div class="cents-center"></div>
+        <div class="cents-needle" id="centsNeedle"></div>
+      </div>
+    </div>
+    <canvas id="viz" width="680" height="220" aria-label="График высоты тона"></canvas>
+    <p class="hint">Зелёная полоса — цель. Бирюзовая линия — ваш голос.</p>
+  </section>
+
+  <section class="panel">
+    <p class="target-note" id="targetLabel">Цель: <span>—</span></p>
+    <div class="exercise-pick" id="exercisePick" role="group" aria-label="Упражнение">
+      <button type="button" data-ex="hold" class="selected">
+        Удержание ноты
+        <small>Держите одну ноту стабильно</small>
+      </button>
+      <button type="button" data-ex="scale">
+        Гамма до-мажор
+        <small>Вверх и вниз по ступенькам</small>
+      </button>
+      <button type="button" data-ex="interval">
+        Интервалы
+        <small>Услышите две ноты — спойте вторую</small>
+      </button>
+    </div>
+    <div class="controls-grid" style="margin-top:12px">
+      <button type="button" class="primary span2" id="btnStart" disabled>Начать упражнение</button>
+      <button type="button" id="btnRef" disabled>Эталон</button>
+      <button type="button" class="danger hidden" id="btnStop">Стоп</button>
+    </div>
+    <p class="status" id="exStatus">Выберите упражнение и нажмите «Начать»</p>
+  </section>
+
+  <section class="panel">
+    <div class="score-box">
+      <div>
+        <div class="lbl">Счёт сессии</div>
+        <div class="val" id="sessionScore">—</div>
+      </div>
+      <div>
+        <div class="lbl">Детали</div>
+        <div id="sessionDetail" style="color:var(--muted);font-size:0.95rem">Пока нет</div>
+      </div>
+    </div>
+  </section>
+
+  <section class="panel">
+    <div class="row between" style="margin-bottom:8px">
+      <strong>Прогресс по дням</strong>
+      <button type="button" class="ghost" id="btnClearProgress">Сбросить</button>
+    </div>
+    <ul class="progress-list" id="progressList">
+      <li><span>Пока пусто</span><span></span></li>
+    </ul>
+  </section>
+
+  <script src="pitch.js"></script>
+  <script>
+(function () {
+  "use strict";
+
+  var PK = window.PitchKit;
+  var CENTS_OK = 25;
+  var ANALYSIS_SIZE = 2048;
+  var HOLD_SECONDS = 8;
+  var NOTE_HOLD_MS = 1800;
+  var INTERVAL_LISTEN_MS = 1600;
+  var INTERVAL_SING_MS = 3500;
+  var STORAGE_KEY = "vocal-trainer-progress-v1";
+
+  var audioCtx = null;
+  var mediaStream = null;
+  var analyser = null;
+  var timeBuf = null;
+  var rafId = 0;
+  var micOn = false;
+
+  var refOsc = null;
+  var refGain = null;
+  var metroOsc = null;
+  var metroGain = null;
+  var metroTimer = 0;
+
+  var currentEx = "hold";
+  var sessionActive = false;
+  var targetMidi = null;
+  var pitchHistory = []; // {t, midi}
+  var lastPitch = null;
+
+  // exercise state
+  var ex = {
+    kind: null,
+    startedAt: 0,
+    // hold
+    inTuneMs: 0,
+    totalMs: 0,
+    lastTs: 0,
+    centsSamples: [],
+    // scale
+    scaleNotes: [],
+    scaleIndex: 0,
+    scaleHits: [],
+    noteEnteredAt: 0,
+    noteInTuneMs: 0,
+    // interval
+    rootMidi: 60,
+    intervalSemis: 7,
+    phase: "idle", // listen | sing | done
+    phaseStarted: 0,
+    intervalOkMs: 0,
+    intervalTotalMs: 0,
+  };
+
+  var el = {
+    btnMic: document.getElementById("btnMic"),
+    micStatus: document.getElementById("micStatus"),
+    noteName: document.getElementById("noteName"),
+    noteHz: document.getElementById("noteHz"),
+    centsLabel: document.getElementById("centsLabel"),
+    centsNeedle: document.getElementById("centsNeedle"),
+    viz: document.getElementById("viz"),
+    targetLabel: document.getElementById("targetLabel"),
+    exercisePick: document.getElementById("exercisePick"),
+    btnStart: document.getElementById("btnStart"),
+    btnStop: document.getElementById("btnStop"),
+    btnRef: document.getElementById("btnRef"),
+    exStatus: document.getElementById("exStatus"),
+    sessionScore: document.getElementById("sessionScore"),
+    sessionDetail: document.getElementById("sessionDetail"),
+    progressList: document.getElementById("progressList"),
+    btnClearProgress: document.getElementById("btnClearProgress"),
+    metronomeToggle: document.getElementById("metronomeToggle"),
+  };
+
+  var ctx2d = el.viz.getContext("2d");
+
+  function setStatus(node, text, cls) {
+    node.textContent = text;
+    node.className = "status" + (cls ? " " + cls : "");
+  }
+
+  function setTargetLabel(text) {
+    el.targetLabel.innerHTML = "Цель: <span>" + text + "</span>";
+  }
+
+  function todayKey() {
+    var d = new Date();
+    var m = String(d.getMonth() + 1).padStart(2, "0");
+    var day = String(d.getDate()).padStart(2, "0");
+    return d.getFullYear() + "-" + m + "-" + day;
+  }
+
+  function loadProgress() {
+    try {
+      return JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}") || {};
+    } catch (e) {
+      return {};
+    }
+  }
+
+  function saveProgress(data) {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+  }
+
+  function recordScore(exerciseName, scorePct, detail) {
+    var data = loadProgress();
+    var key = todayKey();
+    if (!data[key]) data[key] = { scores: [], best: 0 };
+    data[key].scores.push({
+      ex: exerciseName,
+      score: scorePct,
+      detail: detail,
+      at: Date.now(),
+    });
+    data[key].best = Math.max(data[key].best || 0, scorePct);
+    saveProgress(data);
+    renderProgress();
+  }
+
+  function renderProgress() {
+    var data = loadProgress();
+    var keys = Object.keys(data).sort().reverse().slice(0, 14);
+    if (!keys.length) {
+      el.progressList.innerHTML = "<li><span>Пока пусто</span><span></span></li>";
+      return;
+    }
+    el.progressList.innerHTML = keys
+      .map(function (k) {
+        var day = data[k];
+        var n = (day.scores && day.scores.length) || 0;
+        return (
+          "<li><span>" +
+          k +
+          " · " +
+          n +
+          " заход" +
+          (n === 1 ? "" : n < 5 ? "а" : "ов") +
+          '</span><span>лучший ' +
+          Math.round(day.best) +
+          "%</span></li>"
+        );
+      })
+      .join("");
+  }
+
+  function ensureAudio() {
+    if (!audioCtx) {
+      var AC = window.AudioContext || window.webkitAudioContext;
+      audioCtx = new AC({ sampleRate: 44100 });
+    }
+    if (audioCtx.state === "suspended") audioCtx.resume();
+    return audioCtx;
+  }
+
+  async function startMic() {
+    try {
+      ensureAudio();
+      mediaStream = await navigator.mediaDevices.getUserMedia({
+        audio: {
+          echoCancellation: false,
+          noiseSuppression: false,
+          autoGainControl: false,
+        },
+        video: false,
+      });
+      var source = audioCtx.createMediaStreamSource(mediaStream);
+      analyser = audioCtx.createAnalyser();
+      analyser.fftSize = ANALYSIS_SIZE;
+      analyser.smoothingTimeConstant = 0;
+      source.connect(analyser);
+      timeBuf = new Float32Array(analyser.fftSize);
+      micOn = true;
+      el.btnMic.textContent = "Микрофон включён";
+      el.btnMic.disabled = true;
+      el.btnStart.disabled = false;
+      el.btnRef.disabled = false;
+      setStatus(el.micStatus, "Микрофон работает. Можно начинать упражнение.", "ok");
+      loop();
+    } catch (err) {
+      console.error(err);
+      setStatus(
+        el.micStatus,
+        "Не удалось получить микрофон. Откройте через serve.py (localhost или HTTPS).",
+        "err"
+      );
+    }
+  }
+
+  function stopRefTone() {
+    if (refOsc) {
+      try {
+        refOsc.stop();
+      } catch (e) {}
+      refOsc.disconnect();
+      refOsc = null;
+    }
+    if (refGain) {
+      refGain.disconnect();
+      refGain = null;
+    }
+  }
+
+  function playRefTone(midi, durationSec) {
+    ensureAudio();
+    stopRefTone();
+    var freq = PK.midiToFrequency(midi);
+    refGain = audioCtx.createGain();
+    refGain.gain.value = 0.0001;
+    refGain.connect(audioCtx.destination);
+
+    // мягкий тембр: основной + тихая октава
+    refOsc = audioCtx.createOscillator();
+    refOsc.type = "sine";
+    refOsc.frequency.value = freq;
+    refOsc.connect(refGain);
+
+    var now = audioCtx.currentTime;
+    var dur = durationSec || 0.9;
+    refGain.gain.setValueAtTime(0.0001, now);
+    refGain.gain.exponentialRampToValueAtTime(0.18, now + 0.05);
+    refGain.gain.exponentialRampToValueAtTime(0.12, now + dur * 0.6);
+    refGain.gain.exponentialRampToValueAtTime(0.0001, now + dur);
+    refOsc.start(now);
+    refOsc.stop(now + dur + 0.05);
+    refOsc.onended = function () {
+      stopRefTone();
+    };
+  }
+
+  function clickMetronome() {
+    if (!audioCtx) return;
+    var o = audioCtx.createOscillator();
+    var g = audioCtx.createGain();
+    o.frequency.value = 1000;
+    o.type = "square";
+    g.gain.value = 0.0001;
+    o.connect(g);
+    g.connect(audioCtx.destination);
+    var t = audioCtx.currentTime;
+    g.gain.exponentialRampToValueAtTime(0.12, t + 0.005);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + 0.06);
+    o.start(t);
+    o.stop(t + 0.07);
+  }
+
+  function updateMetronome() {
+    clearInterval(metroTimer);
+    metroTimer = 0;
+    if (el.metronomeToggle.checked && micOn) {
+      clickMetronome();
+      metroTimer = setInterval(clickMetronome, 600); // 100 BPM
+    }
+  }
+
+  function noteLabel(midi) {
+    var n = PK.midiToNote(midi, "ru");
+    return n ? n.label : "—";
+  }
+
+  function updateReadout(analysis) {
+    if (!analysis) {
+      el.noteName.textContent = "—";
+      el.noteHz.textContent = "— Гц";
+      el.centsLabel.textContent = "тихо";
+      el.centsLabel.className = "cents-label";
+      el.centsNeedle.style.left = "50%";
+      el.centsNeedle.style.background = "var(--muted)";
+      lastPitch = null;
+      return;
+    }
+    lastPitch = analysis;
+    el.noteName.textContent = analysis.note.label;
+    el.noteHz.textContent = analysis.frequency.toFixed(1) + " Гц";
+    var c = analysis.cents;
+    var abs = Math.abs(c);
+    el.centsLabel.textContent =
+      (c >= 0 ? "+" : "") + c.toFixed(0) + " ¢" + (abs <= CENTS_OK ? " · попали" : "");
+    el.centsLabel.className = "cents-label" + (abs <= CENTS_OK ? " in-tune" : "");
+    var pct = 50 + (c / 50) * 50;
+    pct = Math.max(2, Math.min(98, pct));
+    el.centsNeedle.style.left = pct + "%";
+    el.centsNeedle.style.background =
+      abs <= CENTS_OK ? "var(--ok)" : abs <= 40 ? "var(--warn)" : "var(--bad)";
+  }
+
+  function resizeCanvas() {
+    var canvas = el.viz;
+    var rect = canvas.getBoundingClientRect();
+    var dpr = window.devicePixelRatio || 1;
+    var w = Math.max(280, Math.floor(rect.width * dpr));
+    var h = Math.max(140, Math.floor(rect.height * dpr));
+    if (canvas.width !== w || canvas.height !== h) {
+      canvas.width = w;
+      canvas.height = h;
+    }
+  }
+
+  function drawViz() {
+    resizeCanvas();
+    var w = el.viz.width;
+    var h = el.viz.height;
+    ctx2d.fillStyle = "#0e1015";
+    ctx2d.fillRect(0, 0, w, h);
+
+    var midiMin = 48; // C3
+    var midiMax = 84; // C6
+    if (targetMidi != null) {
+      midiMin = Math.min(midiMin, targetMidi - 6);
+      midiMax = Math.max(midiMax, targetMidi + 6);
+    }
+    pitchHistory.forEach(function (p) {
+      if (p.midi != null) {
+        midiMin = Math.min(midiMin, p.midi - 2);
+        midiMax = Math.max(midiMax, p.midi + 2);
+      }
+    });
+    var span = Math.max(8, midiMax - midiMin);
+
+    function yFor(midi) {
+      return h - ((midi - midiMin) / span) * (h - 16) - 8;
+    }
+
+    // grid
+    ctx2d.strokeStyle = "#1c2130";
+    ctx2d.lineWidth = 1;
+    for (var m = Math.ceil(midiMin); m <= midiMax; m++) {
+      var y = yFor(m);
+      ctx2d.beginPath();
+      ctx2d.moveTo(0, y);
+      ctx2d.lineTo(w, y);
+      ctx2d.stroke();
+    }
+
+    // target band
+    if (targetMidi != null) {
+      var y0 = yFor(targetMidi + CENTS_OK / 100);
+      var y1 = yFor(targetMidi - CENTS_OK / 100);
+      ctx2d.fillStyle = "rgba(107, 196, 138, 0.18)";
+      ctx2d.fillRect(0, Math.min(y0, y1), w, Math.abs(y1 - y0));
+      ctx2d.strokeStyle = "rgba(107, 196, 138, 0.7)";
+      ctx2d.beginPath();
+      ctx2d.moveTo(0, yFor(targetMidi));
+      ctx2d.lineTo(w, yFor(targetMidi));
+      ctx2d.stroke();
+    }
+
+    // pitch trail (last ~4s)
+    var now = performance.now();
+    var windowMs = 4000;
+    var recent = pitchHistory.filter(function (p) {
+      return now - p.t <= windowMs;
+    });
+    pitchHistory = recent;
+
+    if (recent.length > 1) {
+      ctx2d.strokeStyle = "#5eb8a8";
+      ctx2d.lineWidth = Math.max(2, w / 340);
+      ctx2d.lineJoin = "round";
+      ctx2d.beginPath();
+      for (var i = 0; i < recent.length; i++) {
+        var p = recent[i];
+        var x = ((p.t - (now - windowMs)) / windowMs) * w;
+        var yy = yFor(p.midi);
+        if (i === 0) ctx2d.moveTo(x, yy);
+        else ctx2d.lineTo(x, yy);
+      }
+      ctx2d.stroke();
+    }
+
+    // labels
+    ctx2d.fillStyle = "#6b7385";
+    ctx2d.font = Math.max(11, Math.floor(h / 18)) + "px sans-serif";
+    if (targetMidi != null) {
+      ctx2d.fillText(noteLabel(targetMidi), 8, yFor(targetMidi) - 6);
+    }
+  }
+
+  function centsToTarget(analysis, midiTarget) {
+    if (!analysis || midiTarget == null) return NaN;
+    return (analysis.midi - midiTarget) * 100;
+  }
+
+  function finishSession(scorePct, detail, exName) {
+    sessionActive = false;
+    el.btnStart.classList.remove("hidden");
+    el.btnStop.classList.add("hidden");
+    el.btnStart.disabled = !micOn;
+    el.sessionScore.textContent = Math.round(scorePct) + "%";
+    el.sessionDetail.textContent = detail;
+    setStatus(el.exStatus, "Готово: " + detail, "ok");
+    recordScore(exName, scorePct, detail);
+    stopRefTone();
+  }
+
+  function startHold() {
+    var root = 60; // До4
+    targetMidi = root;
+    ex.kind = "hold";
+    ex.startedAt = performance.now();
+    ex.inTuneMs = 0;
+    ex.totalMs = 0;
+    ex.lastTs = performance.now();
+    ex.centsSamples = [];
+    setTargetLabel(noteLabel(root) + " · держите " + HOLD_SECONDS + " с");
+    setStatus(el.exStatus, "Пойте ноту и держите её ровно…", "warn");
+    playRefTone(root, 1.2);
+  }
+
+  function tickHold(now, analysis) {
+    var dt = now - ex.lastTs;
+    ex.lastTs = now;
+    ex.totalMs += dt;
+    var cents = centsToTarget(analysis, targetMidi);
+    if (isFinite(cents)) {
+      ex.centsSamples.push(cents);
+      if (Math.abs(cents) <= CENTS_OK) ex.inTuneMs += dt;
+    }
+    var left = Math.max(0, HOLD_SECONDS - ex.totalMs / 1000);
+    setStatus(
+      el.exStatus,
+      "Осталось " + left.toFixed(1) + " с · в зоне " + Math.round((ex.inTuneMs / Math.max(1, ex.totalMs)) * 100) + "%",
+      "warn"
+    );
+    if (ex.totalMs >= HOLD_SECONDS * 1000) {
+      var timeScore = (ex.inTuneMs / ex.totalMs) * 100;
+      var variance = 0;
+      if (ex.centsSamples.length > 1) {
+        var mean = 0;
+        ex.centsSamples.forEach(function (c) {
+          mean += c;
+        });
+        mean /= ex.centsSamples.length;
+        ex.centsSamples.forEach(function (c) {
+          variance += (c - mean) * (c - mean);
+        });
+        variance = Math.sqrt(variance / ex.centsSamples.length);
+      } else {
+        variance = 50;
+      }
+      // стабильность: чем меньше разброс, тем выше (0¢→100, 50¢→0)
+      var stabScore = Math.max(0, 100 - variance * 2);
+      var score = timeScore * 0.7 + stabScore * 0.3;
+      finishSession(
+        score,
+        "в зоне " + Math.round(timeScore) + "%, стабильность " + Math.round(stabScore) + "%",
+        "Удержание"
+      );
+      targetMidi = null;
+    }
+  }
+
+  function startScale() {
+    ex.kind = "scale";
+    ex.scaleNotes = PK.cMajorScaleMidis(60, true); // C4 up/down
+    ex.scaleIndex = 0;
+    ex.scaleHits = [];
+    ex.noteEnteredAt = performance.now();
+    ex.noteInTuneMs = 0;
+    ex.lastTs = performance.now();
+    targetMidi = ex.scaleNotes[0];
+    setTargetLabel(noteLabel(targetMidi) + " · 1/" + ex.scaleNotes.length);
+    setStatus(el.exStatus, "Гамма до-мажор: спойте каждую ноту по очереди", "warn");
+    playRefTone(targetMidi, 0.7);
+  }
+
+  function tickScale(now, analysis) {
+    var dt = now - ex.lastTs;
+    ex.lastTs = now;
+    var cents = centsToTarget(analysis, targetMidi);
+    if (isFinite(cents) && Math.abs(cents) <= CENTS_OK) {
+      ex.noteInTuneMs += dt;
+    }
+    var need = NOTE_HOLD_MS * 0.45;
+    var elapsed = now - ex.noteEnteredAt;
+    var progress = Math.min(100, (ex.noteInTuneMs / need) * 100);
+    setStatus(
+      el.exStatus,
+      "Нота " +
+        (ex.scaleIndex + 1) +
+        "/" +
+        ex.scaleNotes.length +
+        " · попадание " +
+        Math.round(progress) +
+        "%",
+      "warn"
+    );
+
+    if (ex.noteInTuneMs >= need || elapsed >= NOTE_HOLD_MS) {
+      var hit = Math.min(100, (ex.noteInTuneMs / need) * 100);
+      ex.scaleHits.push(hit);
+      ex.scaleIndex++;
+      if (ex.scaleIndex >= ex.scaleNotes.length) {
+        var avg =
+          ex.scaleHits.reduce(function (a, b) {
+            return a + b;
+          }, 0) / ex.scaleHits.length;
+        var passed = ex.scaleHits.filter(function (h) {
+          return h >= 50;
+        }).length;
+        finishSession(
+          avg,
+          "нот зачтено " + passed + "/" + ex.scaleHits.length,
+          "Гамма"
+        );
+        targetMidi = null;
+        return;
+      }
+      targetMidi = ex.scaleNotes[ex.scaleIndex];
+      ex.noteEnteredAt = now;
+      ex.noteInTuneMs = 0;
+      setTargetLabel(noteLabel(targetMidi) + " · " + (ex.scaleIndex + 1) + "/" + ex.scaleNotes.length);
+      playRefTone(targetMidi, 0.55);
+    }
+  }
+
+  function startInterval() {
+    var intervals = PK.INTERVALS;
+    var pick = intervals[Math.floor(Math.random() * intervals.length)];
+    ex.kind = "interval";
+    ex.rootMidi = 60; // До4
+    ex.intervalSemis = pick.semitones;
+    ex.intervalName = pick.name;
+    ex.phase = "listen";
+    ex.phaseStarted = performance.now();
+    ex.intervalOkMs = 0;
+    ex.intervalTotalMs = 0;
+    ex.lastTs = performance.now();
+    targetMidi = null;
+    setTargetLabel(pick.name + " · слушайте");
+    setStatus(el.exStatus, "Слушайте две ноты…", "warn");
+    playRefTone(ex.rootMidi, 0.7);
+    setTimeout(function () {
+      if (!sessionActive || ex.kind !== "interval") return;
+      playRefTone(ex.rootMidi + ex.intervalSemis, 0.85);
+    }, 850);
+  }
+
+  function tickInterval(now, analysis) {
+    var phaseAge = now - ex.phaseStarted;
+    if (ex.phase === "listen") {
+      if (phaseAge >= INTERVAL_LISTEN_MS) {
+        ex.phase = "sing";
+        ex.phaseStarted = now;
+        ex.lastTs = now;
+        targetMidi = ex.rootMidi + ex.intervalSemis;
+        setTargetLabel(noteLabel(targetMidi) + " · спойте вторую");
+        setStatus(el.exStatus, "Спойте вторую ноту интервала", "warn");
+      }
+      return;
+    }
+    if (ex.phase === "sing") {
+      var dt = now - ex.lastTs;
+      ex.lastTs = now;
+      ex.intervalTotalMs += dt;
+      var cents = centsToTarget(analysis, targetMidi);
+      if (isFinite(cents) && Math.abs(cents) <= CENTS_OK) {
+        ex.intervalOkMs += dt;
+      }
+      var left = Math.max(0, (INTERVAL_SING_MS - (now - ex.phaseStarted)) / 1000);
+      setStatus(
+        el.exStatus,
+        "Спойте вторую · ещё " + left.toFixed(1) + " с",
+        "warn"
+      );
+      if (now - ex.phaseStarted >= INTERVAL_SING_MS) {
+        var score =
+          (ex.intervalOkMs / Math.max(1, ex.intervalTotalMs)) * 100;
+        finishSession(
+          score,
+          ex.intervalName +
+            " · в зоне " +
+            Math.round(score) +
+            "%",
+          "Интервалы"
+        );
+        targetMidi = null;
+      }
+    }
+  }
+
+  function startExercise() {
+    if (!micOn || sessionActive) return;
+    ensureAudio();
+    sessionActive = true;
+    pitchHistory = [];
+    el.btnStart.classList.add("hidden");
+    el.btnStop.classList.remove("hidden");
+    el.sessionScore.textContent = "…";
+    el.sessionDetail.textContent = "Идёт упражнение";
+    if (currentEx === "hold") startHold();
+    else if (currentEx === "scale") startScale();
+    else startInterval();
+  }
+
+  function stopExercise() {
+    if (!sessionActive) return;
+    sessionActive = false;
+    targetMidi = null;
+    el.btnStart.classList.remove("hidden");
+    el.btnStop.classList.add("hidden");
+    el.btnStart.disabled = !micOn;
+    setStatus(el.exStatus, "Упражнение остановлено", "warn");
+    el.sessionDetail.textContent = "Прервано";
+    stopRefTone();
+  }
+
+  function loop() {
+    rafId = requestAnimationFrame(loop);
+    if (!analyser) return;
+    analyser.getFloatTimeDomainData(timeBuf);
+    var analysis = PK.analyzePitch(timeBuf, audioCtx.sampleRate, {
+      threshold: 0.15,
+      minHz: 70,
+      maxHz: 1000,
+      lang: "ru",
+    });
+
+    // сглаживание для визуала: требуем минимальную вероятность
+    if (analysis && analysis.probability < 0.6) analysis = null;
+
+    updateReadout(analysis);
+    if (analysis) {
+      pitchHistory.push({ t: performance.now(), midi: analysis.midi });
+    }
+
+    if (sessionActive) {
+      var now = performance.now();
+      if (ex.kind === "hold") tickHold(now, analysis);
+      else if (ex.kind === "scale") tickScale(now, analysis);
+      else if (ex.kind === "interval") tickInterval(now, analysis);
+    }
+
+    drawViz();
+  }
+
+  // UI wiring
+  el.btnMic.addEventListener("click", startMic);
+  el.btnStart.addEventListener("click", startExercise);
+  el.btnStop.addEventListener("click", stopExercise);
+  el.btnRef.addEventListener("click", function () {
+    var midi = targetMidi != null ? targetMidi : 60;
+    playRefTone(midi, 1.0);
+  });
+  el.metronomeToggle.addEventListener("change", updateMetronome);
+  el.btnClearProgress.addEventListener("click", function () {
+    if (confirm("Сбросить весь прогресс?")) {
+      localStorage.removeItem(STORAGE_KEY);
+      renderProgress();
+    }
+  });
+
+  el.exercisePick.addEventListener("click", function (ev) {
+    var btn = ev.target.closest("button[data-ex]");
+    if (!btn || sessionActive) return;
+    currentEx = btn.getAttribute("data-ex");
+    Array.prototype.forEach.call(el.exercisePick.querySelectorAll("button"), function (b) {
+      b.classList.toggle("selected", b === btn);
+    });
+  });
+
+  window.addEventListener("resize", function () {
+    drawViz();
+  });
+
+  // Secure context hint
+  if (!window.isSecureContext) {
+    setStatus(
+      el.micStatus,
+      "Нужен безопасный контекст: запустите serve.py и откройте localhost или HTTPS.",
+      "err"
+    );
+    el.btnMic.disabled = true;
+  } else if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+    setStatus(el.micStatus, "Браузер не поддерживает микрофон.", "err");
+    el.btnMic.disabled = true;
+  }
+
+  renderProgress();
+  drawViz();
+})();
+  </script>
+</body>
+</html>
